@@ -1,50 +1,89 @@
-# CodeSensAI
+# CodeSensAI - Kids Coding Platform
 
-CodeSensAI is an innovative, AI-powered educational web app designed to introduce young girls (ages 9–16) to technology and coding through a gamified, playful, and accessible learning experience. Inspired by Duolingo, CodeSensAI features a friendly Japanese sensai mascot, interactive modules, quizzes, and a vibrant purple/white theme.
+A fun and interactive coding platform designed specifically for girls aged 9-16 to learn programming in an engaging way.
 
-## ✨ Features (MVP)
-- **Landing Page:** Playful intro, mascot, and call-to-action
-- **User Registration & Login:** With role selection (Student, Parent, Educator), validation, and feedback
-- **Onboarding:** Age group, learning goals, avatar selection
-- **Profile Page:** Avatar, name, age group, editable interests, progress overview, navigation
-- **Dashboard:** Learning modules, mascot guide, progress bar, badges
-- **Quizzes:** Interactive sample quiz with instant feedback
-- **Coding Sandbox:** Simple JavaScript code runner with output
-- **Progress & Badges:** Visual XP, progress bar, and badges
-- **Settings:** Change display name, theme toggle (UI only)
-- **Navigation:** All pages are linked and themed
-- **Mascot:** Present on all key screens, giving encouragement and tips
-- **Child-Friendly UI:** Rounded elements, fun icons, playful colors, accessible fonts
+## ✨ New Features
 
-## 🛠️ Tech Stack
-- **Frontend:** ReactJS, styled-components
-- **Routing:** React Router
-- **Icons:** Emoji, FontAwesome (optional)
-- **State Management:** React Context (for future user state)
+### 🌙 Dark Mode / Light Mode
+- **Theme Toggle**: Click the moon/sun button in the navbar to switch between light and dark themes
+- **Persistent**: Your theme preference is saved in localStorage
+- **Smooth Transitions**: Beautiful animations when switching themes
+- **Kid-Friendly**: Both themes are designed to be easy on the eyes
+
+### 🎉 Welcome Banner
+- **Fun Messages**: Random encouraging messages appear when you first visit
+- **Auto-Dismiss**: Automatically disappears after 4 seconds
+- **Manual Close**: Click the X button to close early
+- **Kid-Friendly**: Uses emojis and encouraging language
+
+### ⚡ Loading Spinner
+- **Animated**: Smooth spinning animation with fun messages
+- **Contextual**: Different messages for different loading states
+- **Kid-Friendly**: Encouraging messages like "Loading awesome content... 🚀"
+- **Reusable**: Can be used throughout the app
 
 ## 🚀 Getting Started
-1. **Install dependencies:**
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
+
+### Installation
+1. Clone the repository
+2. Install dependencies:
    ```bash
    npm install
    ```
-2. **Start the development server:**
+3. Start the development server:
    ```bash
    npm start
    ```
-3. **Open in your browser:**
-   Visit [http://localhost:3000](http://localhost:3000)
 
-## 📚 Future Enhancements
-- Backend integration (Flask or Node.js, JWT auth, database)
-- Real user authentication and persistent profiles
-- Parental/Educator dashboard
-- More interactive quizzes, modules, and coding challenges
-- AI-driven personalized learning paths
-- Animations, mascot interactions, and notifications
-- Accessibility and mobile responsiveness improvements
+### Running Backend
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the server:
+   ```bash
+   npm start
+   ```
 
-## 👩‍💻 Contributing
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+## 🎨 Features
 
-## 📄 License
-[MIT](LICENSE)
+- **User Authentication**: Register, login, and profile management
+- **Interactive Quizzes**: Fun coding challenges with immediate feedback
+- **Progress Tracking**: Visual progress bars and achievement system
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Kid-Friendly UI**: Bright colors, emojis, and encouraging messages
+- **Sensai Mascot**: Interactive mascot that responds to user actions
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React, styled-components, React Router
+- **Backend**: Node.js, Express
+- **Authentication**: JWT tokens
+- **Styling**: CSS variables for theming
+
+## 🎯 Target Audience
+
+- Girls aged 9-16
+- Beginners to intermediate coders
+- Students interested in STEM
+- Parents and educators
+
+## 🌟 Contributing
+
+This project is designed to be educational and fun. Feel free to contribute by:
+- Adding new quiz questions
+- Improving the UI/UX
+- Adding new features
+- Fixing bugs
+
+## 📝 License
+
+This project is open source and available under the MIT License.

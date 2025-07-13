@@ -15,7 +15,9 @@ import ProgressPage from './pages/ProgressPage';
 import SettingsPage from './pages/SettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import SensaiMascot from './components/SensaiMascot';
+import WelcomeBanner from './components/WelcomeBanner';
 import { UserProvider } from './UserContext';
+import { ThemeProvider as CustomThemeProvider } from './ThemeContext';
 
 const theme = {
   colors: {
@@ -30,15 +32,21 @@ const theme = {
 const AppContainer = styled.div`
   min-height: 100vh;
   background: var(--background);
+  display: flex;
+  flex-direction: column;
 `;
 
 const MainContent = styled.main`
   padding-top: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 `;
 
 // Component to handle mascot expressions based on route
 const AppWithMascot = () => {
   const location = useLocation();
+  const [showWelcome, setShowWelcome] = useState(true);
   const [mascotState, setMascotState] = useState({
     expression: 'happy',
     message: '',
@@ -131,6 +139,7 @@ const AppWithMascot = () => {
 
   return (
     <AppContainer>
+      {showWelcome && <WelcomeBanner show={showWelcome} onClose={() => setShowWelcome(false)} />}
       <Navbar />
       <MainContent>
         <Routes>
@@ -164,13 +173,15 @@ const AppWithMascot = () => {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <UserProvider>
-        <Router>
-          <AppWithMascot />
-        </Router>
-      </UserProvider>
-    </ThemeProvider>
+    <CustomThemeProvider>
+      <ThemeProvider theme={theme}>
+        <UserProvider>
+          <Router>
+            <AppWithMascot />
+          </Router>
+        </UserProvider>
+      </ThemeProvider>
+    </CustomThemeProvider>
   );
 }
 

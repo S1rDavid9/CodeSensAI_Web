@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../UserContext';
+import { ThemeContext } from '../ThemeContext';
 
 const Nav = styled.nav`
   background: var(--gradient-primary);
@@ -151,8 +152,31 @@ const UserName = styled.span`
   white-space: nowrap;
 `;
 
+const ThemeToggleButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 0.6em 1.2em;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+`;
+
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useUser();
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -191,12 +215,18 @@ const Navbar = () => {
             <StyledLink to="/quizzes">🧩 Quizzes</StyledLink>
             <StyledLink to="/sandbox">💻 Sandbox</StyledLink>
             <StyledLink to="/profile">👤 Profile</StyledLink>
+            <ThemeToggleButton onClick={toggleTheme}>
+              {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? "Dark" : "Light"}
+            </ThemeToggleButton>
             <LogoutButton onClick={handleLogout}>🚪 Logout</LogoutButton>
           </>
         ) : (
           <>
             <StyledLink to="/login">🔑 Login</StyledLink>
             <StyledLink to="/register">✨ Register</StyledLink>
+            <ThemeToggleButton onClick={toggleTheme}>
+              {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? "Dark" : "Light"}
+            </ThemeToggleButton>
           </>
         )}
       </NavLinks>
@@ -210,12 +240,18 @@ const Navbar = () => {
             <StyledLink to="/quizzes" onClick={() => setIsMobileMenuOpen(false)}>🧩 Quizzes</StyledLink>
             <StyledLink to="/sandbox" onClick={() => setIsMobileMenuOpen(false)}>💻 Sandbox</StyledLink>
             <StyledLink to="/profile" onClick={() => setIsMobileMenuOpen(false)}>👤 Profile</StyledLink>
+            <ThemeToggleButton onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}>
+              {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? "Dark" : "Light"}
+            </ThemeToggleButton>
             <LogoutButton onClick={handleLogout}>🚪 Logout</LogoutButton>
           </>
         ) : (
           <>
             <StyledLink to="/login" onClick={() => setIsMobileMenuOpen(false)}>🔑 Login</StyledLink>
             <StyledLink to="/register" onClick={() => setIsMobileMenuOpen(false)}>✨ Register</StyledLink>
+            <ThemeToggleButton onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}>
+              {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? "Dark" : "Light"}
+            </ThemeToggleButton>
           </>
         )}
       </MobileMenu>

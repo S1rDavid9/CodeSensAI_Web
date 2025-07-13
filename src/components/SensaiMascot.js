@@ -36,6 +36,15 @@ const blink = keyframes`
   95% { transform: scaleY(0.1); }
 `;
 
+const shake = keyframes`
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-10px); }
+  80% { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+`;
+
 // Styled Components
 const MascotContainer = styled.div`
   position: fixed;
@@ -66,6 +75,10 @@ const MascotBody = styled.div`
   
   ${props => props.isThinking && css`
     animation: ${wiggle} 1s ease-in-out infinite;
+  `}
+
+  ${props => props.isShaking && css`
+    animation: ${shake} 0.5s cubic-bezier(.36,.07,.19,.97) both;
   `}
 `;
 
@@ -216,6 +229,7 @@ const SensaiMascot = ({
   message = '', 
   isCelebrating = false, 
   isThinking = false,
+  isShaking = false,
   onClick 
 }) => {
   const [isBlinking, setIsBlinking] = useState(false);
@@ -260,6 +274,7 @@ const SensaiMascot = ({
       <MascotBody 
         isCelebrating={isCelebrating} 
         isThinking={isThinking}
+        isShaking={isShaking}
       >
         <Glasses />
         <MascotFace>

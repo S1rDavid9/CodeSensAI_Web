@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useMascot } from '../hooks/useMascot';
+import SensaiMascot from '../components/SensaiMascot';
 
 const Wrapper = styled.section`
   display: flex;
@@ -10,11 +10,6 @@ const Wrapper = styled.section`
   background: var(--background);
   padding: 2rem 1rem;
   position: relative;
-`;
-
-const Mascot = styled.div`
-  font-size: 3rem;
-  margin-bottom: 1em;
 `;
 
 const Title = styled.h2`
@@ -52,11 +47,18 @@ const OptionButton = styled.button`
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border 0.2s;
+  transition: background 0.2s, color 0.2s, border 0.2s, opacity 0.2s;
   &:hover {
     background: var(--primary-purple);
     color: #fff;
     border: 2px solid var(--secondary-purple);
+  }
+  &:disabled {
+    opacity: 0.6;
+    background: var(--accent);
+    color: var(--primary-purple);
+    border: 2px dashed var(--secondary-purple);
+    cursor: not-allowed;
   }
 `;
 
@@ -128,41 +130,6 @@ const ResetButton = styled.button`
   }
 `;
 
-const FeedbackMessage = styled.div`
-  position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: ${props => (props.correct ? '#e8f5e8' : '#ffeaea')};
-  color: ${props => (props.correct ? '#2e7d32' : '#d32f2f')};
-  border: 3px solid ${props => (props.correct ? '#4caf50' : '#f44336')};
-  border-radius: 20px;
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
-  font-weight: 700;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  animation: bounceIn 0.6s ease-out;
-  
-  @keyframes bounceIn {
-    0% {
-      transform: translateX(-50%) scale(0.3);
-      opacity: 0;
-    }
-    50% {
-      transform: translateX(-50%) scale(1.05);
-    }
-    70% {
-      transform: translateX(-50%) scale(0.9);
-    }
-    100% {
-      transform: translateX(-50%) scale(1);
-      opacity: 1;
-    }
-  }
-`;
-
 const OptionsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -172,10 +139,15 @@ const OptionsContainer = styled.div`
 const QuizzesPage = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
+  const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedback, setFeedback] = useState('');
-  const { congratulate, comfort } = useMascot();
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [showTryAgain, setShowTryAgain] = useState(false);
+  const [mascotAnim, setMascotAnim] = useState('');
+  const [showNext, setShowNext] = useState(false);
 
+  // Expanded and more diverse questions
   const questions = [
     {
       question: 'What does HTML stand for?',
@@ -216,78 +188,187 @@ const QuizzesPage = () => {
         'To create variables'
       ],
       correct: 2
-    }
+    },
+    {
+      question: 'Which HTML tag is used to display a picture on a web page?',
+      options: ['<img>', '<picture>', '<photo>', '<src>'],
+      correct: 0
+    },
+    {
+      question: 'What property changes the text color in CSS?',
+      options: ['font-style', 'color', 'background', 'text-align'],
+      correct: 1
+    },
+    {
+      question: 'Which of these is used to repeat code in JavaScript?',
+      options: ['if statement', 'for loop', 'variable', 'function'],
+      correct: 1
+    },
+    {
+      question: 'What is the correct way to start an array in JavaScript?',
+      options: ['let arr = []', 'let arr = {}', 'let arr = ()', 'let arr = <>'],
+      correct: 0
+    },
+    {
+      question: 'Which CSS property makes text bold?',
+      options: ['font-weight', 'font-size', 'font-style', 'text-decoration'],
+      correct: 0
+    },
+    {
+      question: 'What does the <h1> tag represent in HTML?',
+      options: ['A heading', 'A hyperlink', 'A list', 'A table'],
+      correct: 0
+    },
+    {
+      question: 'Which of these is NOT a valid JavaScript variable name?',
+      options: ['myVar', '2cool', '_name', 'userName'],
+      correct: 1
+    },
+    {
+      question: 'What is the output of 2 + "2" in JavaScript?',
+      options: ['4', '22', 'NaN', 'undefined'],
+      correct: 1
+    },
+    {
+      question: 'Which HTML tag creates a link to another page?',
+      options: ['<a>', '<link>', '<href>', '<url>'],
+      correct: 0
+    },
+    {
+      question: 'What does CSS stand for?',
+      options: [
+        'Cascading Style Sheets',
+        'Creative Style Syntax',
+        'Computer Styled Sections',
+        'Colorful Style Sheets'
+      ],
+      correct: 0
+    },
   ];
 
-  const handleAnswer = (selectedOption) => {
-    const isCorrect = selectedOption === questions[currentQuestion].correct;
-    
-    if (isCorrect) {
+  const handleSubmit = () => {
+    if (selectedOption === null) {
+      setFeedback('Please select an answer!');
+      setIsCorrect(false);
+      setShowFeedback(true);
+      setMascotAnim('shake');
+      setShowTryAgain(false);
+      return;
+    }
+    const isAnswerCorrect = selectedOption === questions[currentQuestion].correct;
+    setIsCorrect(isAnswerCorrect);
+    setShowFeedback(true);
+    setMascotAnim(isAnswerCorrect ? 'bounce' : 'shake');
+    if (isAnswerCorrect) {
       setScore(score + 1);
       setFeedback('Woo-hoo! You got it! 🎉✨');
-      congratulate('🎉 Correct! You are a coding genius! 🎉');
+      setShowNext(true);
+      setShowTryAgain(false);
     } else {
-      setFeedback('Oopsie! That is not quite right, but do not worry! Try again, you can do it! 💪🌈');
-      comfort('💪 Do not worry! Every mistake helps you learn! 💪');
+      setFeedback('Oops! That is not quite right. Try again! 💪🌈');
+      setShowTryAgain(true);
+      setShowNext(false);
     }
-    
-    setShowFeedback(true);
-    
-    setTimeout(() => {
-      setShowFeedback(false);
-      if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion(currentQuestion + 1);
-      }
-    }, 2000);
+  };
+
+  const handleNext = () => {
+    setCurrentQuestion(currentQuestion + 1);
+    setSelectedOption(null);
+    setShowFeedback(false);
+    setIsCorrect(null);
+    setShowTryAgain(false);
+    setShowNext(false);
+    setMascotAnim('');
+  };
+
+  const handleTryAgain = () => {
+    setShowFeedback(false);
+    setIsCorrect(null);
+    setShowTryAgain(false);
+    setMascotAnim('');
   };
 
   const resetQuiz = () => {
     setCurrentQuestion(0);
     setScore(0);
+    setSelectedOption(null);
     setShowFeedback(false);
     setFeedback('');
+    setIsCorrect(null);
+    setShowTryAgain(false);
+    setShowNext(false);
+    setMascotAnim('');
   };
 
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <Wrapper>
-      <Mascot>🧙‍♀️</Mascot>
-      <Title>Code Quiz with Sensai!</Title>
-      <Subtitle>Test your coding knowledge! You can do it! 💪</Subtitle>
-      
-      <ProgressBar>
-        <ProgressFill progress={progress} />
+    <Wrapper style={{ background: 'linear-gradient(135deg, #ede9fe 0%, #fff 100%)', minHeight: '80vh', borderRadius: 24, boxShadow: '0 8px 32px rgba(124,58,237,0.08)' }}>
+      <SensaiMascot
+        expression={isCorrect === null ? 'thinking' : isCorrect ? 'happy' : 'surprised'}
+        message={showFeedback ? feedback : "Let's ace this quiz together!"}
+        isShaking={mascotAnim === 'shake'}
+        isCelebrating={mascotAnim === 'bounce'}
+      />
+      <Title style={{ fontSize: '2.5rem', color: '#7c3aed', marginBottom: 0 }}>Code Quiz with Sensai!</Title>
+      <Subtitle style={{ color: '#a21caf', fontWeight: 600, marginBottom: 24 }}>Test your coding knowledge! You can do it! 💪</Subtitle>
+      <ProgressBar style={{ marginBottom: 24, background: '#e0e7ff' }}>
+        <ProgressFill progress={progress} style={{ background: 'linear-gradient(90deg, #7c3aed 60%, #a21caf 100%)' }} />
         <ProgressText>Question {currentQuestion + 1} of {questions.length}</ProgressText>
       </ProgressBar>
-      
-      <ScoreDisplay>Score: {score}/{questions.length} 🌟</ScoreDisplay>
-      
+      <ScoreDisplay style={{ color: '#a21caf', fontWeight: 700, fontSize: '1.3rem' }}>Score: {score}/{questions.length} 🌟</ScoreDisplay>
       {currentQuestion < questions.length ? (
         <>
-          <QuestionBox>
+          <QuestionBox style={{ border: '2px solid #a21caf', background: '#fff7fb', fontSize: '1.25rem', fontWeight: 600 }}>
             {questions[currentQuestion].question}
           </QuestionBox>
-          
           <OptionsContainer>
             {questions[currentQuestion].options.map((option, index) => (
               <OptionButton
                 key={index}
-                onClick={() => handleAnswer(index)}
-                disabled={showFeedback}
+                onClick={() => setSelectedOption(index)}
+                disabled={showFeedback && isCorrect}
+                style={{
+                  border: selectedOption === index ? '3px solid #7c3aed' : undefined,
+                  background: selectedOption === index ? '#ede9fe' : undefined,
+                  boxShadow: showFeedback && !isCorrect && selectedOption === index ? '0 0 0 3px #f44336' : undefined,
+                  color: selectedOption === index ? '#a21caf' : undefined,
+                  fontWeight: selectedOption === index ? 700 : 600,
+                  minWidth: 180,
+                  margin: 8,
+                  fontSize: '1.1rem',
+                  letterSpacing: 0.5
+                }}
               >
                 {option}
               </OptionButton>
             ))}
           </OptionsContainer>
+          <div style={{ marginTop: 24 }}>
+            {!showFeedback && (
+              <OptionButton onClick={handleSubmit} disabled={selectedOption === null} style={{ background: '#7c3aed', color: '#fff', border: 'none', fontSize: '1.15rem', padding: '0.8em 2em', borderRadius: 20, margin: 8, boxShadow: '0 2px 8px #ede9fe' }}>
+                Submit
+              </OptionButton>
+            )}
+            {showTryAgain && (
+              <OptionButton onClick={handleTryAgain} style={{ background: '#f44336', color: '#fff', border: 'none', marginLeft: 8, fontSize: '1.1rem', borderRadius: 20, margin: 8 }}>
+                Try Again
+              </OptionButton>
+            )}
+            {showNext && (
+              <OptionButton onClick={handleNext} style={{ background: '#22c55e', color: '#fff', border: 'none', marginLeft: 8, fontSize: '1.1rem', borderRadius: 20, margin: 8 }}>
+                Next Question
+              </OptionButton>
+            )}
+          </div>
         </>
       ) : (
         <ResultsContainer>
-          <ResultTitle>
+          <ResultTitle style={{ color: '#7c3aed', fontSize: '2.5rem', marginBottom: 0 }}>
             {score === questions.length ? '🏆 Perfect Score! 🏆' : '🎉 Quiz Complete! 🎉'}
           </ResultTitle>
-          <ResultScore>You got {score} out of {questions.length} correct!</ResultScore>
-          <ResultMessage>
+          <ResultScore style={{ color: '#a21caf', fontWeight: 700, fontSize: '1.7rem' }}>You got {score} out of {questions.length} correct!</ResultScore>
+          <ResultMessage style={{ color: '#7c3aed', fontWeight: 600, fontSize: '1.2rem' }}>
             {score === questions.length 
               ? 'Incredible! You are a coding master! 🌟' 
               : score >= questions.length * 0.7 
@@ -295,14 +376,8 @@ const QuizzesPage = () => {
                 : 'Good effort! Keep practicing and you will get even better! 💪'
             }
           </ResultMessage>
-          <ResetButton onClick={resetQuiz}>Try Again! 🔄</ResetButton>
+          <ResetButton onClick={resetQuiz} style={{ background: '#7c3aed', color: '#fff', fontSize: '1.15rem', borderRadius: 20, padding: '0.8em 2em', marginTop: 16, boxShadow: '0 2px 8px #ede9fe' }}>Try Again! 🔄</ResetButton>
         </ResultsContainer>
-      )}
-      
-      {showFeedback && (
-        <FeedbackMessage>
-          {feedback}
-        </FeedbackMessage>
       )}
     </Wrapper>
   );

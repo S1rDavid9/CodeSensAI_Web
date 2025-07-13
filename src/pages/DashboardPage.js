@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useUser } from '../UserContext';
 import { Link } from 'react-router-dom';
+import Spinner from '../components/Spinner';
+import ModuleViewer from '../components/ModuleViewer';
+import modules from '../data/modules';
 
 const fadeInUp = keyframes`
   from {
@@ -322,6 +325,28 @@ const ActivityTime = styled.div`
 
 const DashboardPage = () => {
   const { user } = useUser();
+  const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    // Simulate loading time
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Notification handler
+  const handleNotify = (type, message) => {
+    setNotifications((prev) => [
+      { type, message, time: new Date().toLocaleTimeString() },
+      ...prev.slice(0, 9), // keep max 10
+    ]);
+  };
+
+  if (loading) {
+    return <Spinner message="Loading your awesome dashboard... 🚀" />;
+  }
 
   if (!user) {
     return (
@@ -334,7 +359,7 @@ const DashboardPage = () => {
   }
 
   const progress = user.profile?.completedLessons?.length || 0;
-  const totalLessons = 20; // Mock total lessons
+  const totalLessons = modules.length; // Dynamic total lessons
   const progressPercentage = Math.round((progress / totalLessons) * 100);
   const points = user.profile?.points || 0;
   const level = user.profile?.level || 'beginner';
@@ -384,6 +409,7 @@ const DashboardPage = () => {
             <StatLabel>Lessons Remaining</StatLabel>
           </StatCard>
         </StatsGrid>
+        <ModuleViewer onNotify={handleNotify} />
 
         <ProgressSection>
           <ProgressHeader>
@@ -424,27 +450,24 @@ const DashboardPage = () => {
 
         <RecentActivity>
           <ActivityTitle>Recent Activity</ActivityTitle>
-          <ActivityItem>
-            <ActivityIcon>🎉</ActivityIcon>
-            <ActivityContent>
-              <ActivityText>Completed "Variables & Data Types" lesson</ActivityText>
-              <ActivityTime>2 hours ago</ActivityTime>
-            </ActivityContent>
-          </ActivityItem>
-          <ActivityItem>
-            <ActivityIcon>🏆</ActivityIcon>
-            <ActivityContent>
-              <ActivityText>Earned "First Steps" badge</ActivityText>
-              <ActivityTime>1 day ago</ActivityTime>
-            </ActivityContent>
-          </ActivityItem>
-          <ActivityItem>
-            <ActivityIcon>🧩</ActivityIcon>
-            <ActivityContent>
-              <ActivityText>Scored 100% on Basic Quiz</ActivityText>
-              <ActivityTime>2 days ago</ActivityTime>
-            </ActivityContent>
-          </ActivityItem>
+          {notifications.length === 0 ? (
+            <ActivityItem>
+              <ActivityIcon>👋</ActivityIcon>
+              <ActivityContent>
+                <ActivityText>No recent activity yet. Start a module to see your progress!</ActivityText>
+              </ActivityContent>
+            </ActivityItem>
+          ) : (
+            notifications.map((n, i) => (
+              <ActivityItem key={i}>
+                <ActivityIcon>{n.type === 'module' ? '📚' : n.type === 'badge' ? '🏅' : n.type === 'points' ? '⭐' : '🔔'}</ActivityIcon>
+                <ActivityContent>
+                  <ActivityText>{n.message}</ActivityText>
+                  <ActivityTime>{n.time}</ActivityTime>
+                </ActivityContent>
+              </ActivityItem>
+            ))
+          )}
         </RecentActivity>
       </Container>
     </Wrapper>
