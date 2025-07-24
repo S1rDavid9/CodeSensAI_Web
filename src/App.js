@@ -18,6 +18,7 @@ import SensaiMascot from './components/SensaiMascot';
 import WelcomeBanner from './components/WelcomeBanner';
 import { UserProvider } from './UserContext';
 import { ThemeProvider as CustomThemeProvider } from './ThemeContext';
+import ParentDashboardPage from './pages/ParentDashboardPage';
 
 const theme = {
   colors: {
@@ -154,6 +155,7 @@ const AppWithMascot = () => {
           <Route path="/sandbox" element={<SandboxPage />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/parent-dashboard" element={<ParentDashboardPage />} />
           {/* More routes coming soon */}
         </Routes>
       </MainContent>
