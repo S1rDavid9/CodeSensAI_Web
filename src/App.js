@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
 import LandingPage from './pages/LandingPage';
-import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
@@ -14,11 +14,17 @@ import SandboxPage from './pages/SandboxPage';
 import ProgressPage from './pages/ProgressPage';
 import SettingsPage from './pages/SettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import EmailVerificationPage from './pages/EmailVerificationPage';
 import SensaiMascot from './components/SensaiMascot';
 import WelcomeBanner from './components/WelcomeBanner';
-import { UserProvider } from './UserContext';
+import { UserProvider, useUser } from './UserContext';
 import { ThemeProvider as CustomThemeProvider } from './ThemeContext';
+import { NotificationProvider } from './NotificationContext';
 import ParentDashboardPage from './pages/ParentDashboardPage';
+import ParentRegisterPage from './pages/ParentRegisterPage';
+import ParentLoginPage from './pages/ParentLoginPage';
+import ModulePage from './pages/ModulePage';
+import Spinner from './components/Spinner';
 
 const theme = {
   colors: {
@@ -30,16 +36,20 @@ const theme = {
   },
 };
 
-const AppContainer = styled.div`
-  min-height: 100vh;
-  background: var(--background);
+const MainContent = styled.main`
+  flex: 1;
   display: flex;
   flex-direction: column;
 `;
 
-const MainContent = styled.main`
-  padding-top: 0;
-  flex: 1;
+const AuthenticatedLayout = styled.div`
+  min-height: 100vh;
+  background: var(--background);
+`;
+
+const PublicLayout = styled.div`
+  min-height: 100vh;
+  background: var(--background);
   display: flex;
   flex-direction: column;
 `;
@@ -138,25 +148,59 @@ const AppWithMascot = () => {
     }));
   };
 
+  const { user } = useUser();
+  const isAuthenticated = !!user;
+
+  // Define which routes need authentication
+  const authenticatedRoutes = [
+    '/profile', '/dashboard', '/quizzes', '/sandbox', '/progress', 
+    '/settings', '/parent-dashboard', '/onboarding', '/module'
+  ];
+
+  const isAuthenticatedRoute = authenticatedRoutes.some(route => 
+    location.pathname.startsWith(route)
+  );
+
+  if (isAuthenticated && isAuthenticatedRoute) {
+    return (
+      <AuthenticatedLayout>
+        <Sidebar>
+          <Routes>
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/quizzes" element={<QuizzesPage />} />
+            <Route path="/sandbox" element={<SandboxPage />} />
+            <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/parent-dashboard" element={<ParentDashboardPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/module/:moduleId" element={<ModulePage />} />
+          </Routes>
+        </Sidebar>
+        
+        <SensaiMascot 
+          expression={mascotState.expression}
+          message={mascotState.message}
+          isCelebrating={mascotState.isCelebrating}
+          isThinking={mascotState.isThinking}
+          onClick={handleMascotClick}
+        />
+      </AuthenticatedLayout>
+    );
+  }
+
   return (
-    <AppContainer>
+    <PublicLayout>
       {showWelcome && <WelcomeBanner show={showWelcome} onClose={() => setShowWelcome(false)} />}
-      <Navbar />
       <MainContent>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/quizzes" element={<QuizzesPage />} />
-          <Route path="/sandbox" element={<SandboxPage />} />
-          <Route path="/progress" element={<ProgressPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/parent-dashboard" element={<ParentDashboardPage />} />
-          {/* More routes coming soon */}
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/parent-register" element={<ParentRegisterPage />} />
+          <Route path="/parent-login" element={<ParentLoginPage />} />
         </Routes>
       </MainContent>
       
@@ -169,21 +213,29 @@ const AppWithMascot = () => {
         isThinking={mascotState.isThinking}
         onClick={handleMascotClick}
       />
-    </AppContainer>
+    </PublicLayout>
   );
 };
 
 function App() {
+  const { logoutLoading } = useUser();
   return (
+    <>
+      {logoutLoading && (
+        <Spinner message="Logging out... 😢 Come back soon!" />
+      )}
     <CustomThemeProvider>
       <ThemeProvider theme={theme}>
         <UserProvider>
+            <NotificationProvider>
           <Router>
             <AppWithMascot />
           </Router>
+            </NotificationProvider>
         </UserProvider>
       </ThemeProvider>
     </CustomThemeProvider>
+    </>
   );
 }
 

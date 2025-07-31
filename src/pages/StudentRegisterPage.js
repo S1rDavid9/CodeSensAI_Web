@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../api';
-import Spinner from '../components/Spinner';
 
 const Wrapper = styled.section`
   display: flex;
@@ -23,9 +22,9 @@ const Title = styled.h2`
 `;
 
 const Form = styled.form`
-  background: var(--surface-white);
+  background: #fff;
   border-radius: 20px;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 2px 12px rgba(142, 68, 173, 0.08);
   padding: 2rem 2.5rem;
   display: flex;
   flex-direction: column;
@@ -40,15 +39,6 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-  padding: 0.7em 1em;
-  border-radius: 12px;
-  border: 1px solid var(--accent);
-  font-size: 1rem;
-  outline: none;
-  margin-bottom: 0.5em;
-`;
-
-const Select = styled.select`
   padding: 0.7em 1em;
   border-radius: 12px;
   border: 1px solid var(--accent);
@@ -95,18 +85,6 @@ const ErrorMsg = styled.div`
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  animation: slideUp 0.5s ease-out;
-  
-  @keyframes slideUp {
-    0% {
-      transform: translateX(-50%) translateY(100%);
-      opacity: 0;
-    }
-    100% {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-  }
 `;
 
 const SuccessMsg = styled.div`
@@ -118,25 +96,12 @@ const SuccessMsg = styled.div`
   background: #e8f5e8;
   border: 3px solid #4caf50;
   border-radius: 20px;
-  padding: 1.5rem 2rem;
+  padding: 1rem 2rem;
   font-size: 1.1rem;
   font-weight: 700;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  animation: slideUp 0.5s ease-out;
-  max-width: 500px;
-  
-  @keyframes slideUp {
-    0% {
-      transform: translateX(-50%) translateY(100%);
-      opacity: 0;
-    }
-    100% {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-  }
 `;
 
 const LoginLink = styled.div`
@@ -146,8 +111,8 @@ const LoginLink = styled.div`
   text-align: center;
 `;
 
-const RegisterPage = () => {
-  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'student', inviteCode: '' });
+const StudentRegisterPage = () => {
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', inviteCode: '' });
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -164,31 +129,27 @@ const RegisterPage = () => {
       setError('Oopsie! Please fill in all the fields to join our coding family! 🌟');
       return;
     }
-
     if (form.password !== form.confirmPassword) {
       setError('Oh no! Your passwords do not match. Let us try again! 🔐');
       return;
     }
-
     if (form.password.length < 6) {
       setError('Your password needs to be at least 6 characters long to keep you safe! 🛡️');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
-      const result = await registerUser(form);
+      const result = await registerUser({ ...form, role: 'student' });
       if (result.success) {
         setSuccess(true);
-        // Don't redirect to login - let them verify email first
-        // The success message will tell them to check their email
+        setTimeout(() => {
+          navigate('/student-login');
+        }, 1500);
       } else {
         setError(result.error || 'Oops! Something went wrong. Let us try again! 🔧');
       }
     } catch (err) {
-      console.error('Registration error:', err);
       setError('Oh no! Something went wrong. Let us try again! 🔧');
     } finally {
       setLoading(false);
@@ -201,100 +162,26 @@ const RegisterPage = () => {
       <MascotTip>🌟 Ready to start your incredible coding adventure? Let us create your account!</MascotTip>
       <Form onSubmit={handleSubmit}>
         <Label htmlFor="username">Choose Your Username</Label>
-        <Input
-          id="username"
-          name="username"
-          type="text"
-          value={form.username}
-          onChange={handleChange}
-          placeholder="Pick a cool username"
-          required
-        />
-
+        <Input id="username" name="username" type="text" value={form.username} onChange={handleChange} placeholder="Pick a cool username" required />
         <Label htmlFor="email">Your Email Address</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Enter your email address"
-          required
-        />
-
+        <Input id="email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="Enter your email address" required />
         <Label htmlFor="password">Create a Secret Password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Make it super secure!"
-          required
-        />
-
+        <Input id="password" name="password" type="password" value={form.password} onChange={handleChange} placeholder="Make it super secure!" required />
         <Label htmlFor="confirmPassword">Confirm Your Password</Label>
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          placeholder="Type it again to be sure"
-          required
-        />
-
-        <Label htmlFor="role">I am a...</Label>
-        <Select id="role" name="role" value={form.role} onChange={handleChange}>
-          <option value="student">Student 👧👦</option>
-          <option value="teacher">Teacher 👩‍🏫👨‍🏫</option>
-          <option value="parent">Parent 👩👨</option>
-        </Select>
-
-        {form.role === 'student' && (
-          <>
-            <Label htmlFor="inviteCode">Parent Invite Code (optional)</Label>
-            <Input
-              id="inviteCode"
-              name="inviteCode"
-              type="text"
-              value={form.inviteCode}
-              onChange={handleChange}
-              placeholder="Enter your parent's invite code to link accounts"
-            />
-            <div style={{ fontSize: '0.9em', color: 'var(--text-secondary)', marginTop: '-0.5em', marginBottom: '1em' }}>
-              💡 Ask your parent for an invite code to link your accounts together!
-            </div>
-          </>
-        )}
-
+        <Input id="confirmPassword" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} placeholder="Type it again to be sure" required />
+        <Label htmlFor="inviteCode">Invite Code (optional)</Label>
+        <Input id="inviteCode" name="inviteCode" type="text" value={form.inviteCode} onChange={handleChange} placeholder="Enter invite code if you have one" />
         <SubmitButton type="submit" disabled={loading}>
-          {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Spinner size="small" inline />
-              Creating your account... ✨
-            </div>
-          ) : (
-            'Join the Adventure! 🚀'
-          )}
+          {loading ? 'Creating your account... ✨' : 'Join the Adventure! 🚀'}
         </SubmitButton>
       </Form>
       <LoginLink>
-        Already have an account? <Link to="/login">Welcome back! 🏠</Link>
+        Already have an account? <Link to="/student-login">Welcome back! 🏠</Link>
       </LoginLink>
       {error && <ErrorMsg>{error}</ErrorMsg>}
-      {success && (
-        <SuccessMsg>
-          🎉 Welcome to CodeSensai! 
-          <br />
-          📧 Please check your email and click the verification link to complete your registration.
-          <br />
-          <br />
-          💡 After verifying your email, you'll be taken to set up your profile!
-        </SuccessMsg>
-      )}
+      {success && <SuccessMsg>Yay! Your account is ready! Taking you to login... 🎉✨</SuccessMsg>}
     </Wrapper>
   );
 };
 
-export default RegisterPage; 
+export default StudentRegisterPage; 

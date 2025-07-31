@@ -1,61 +1,28 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { FaUserTie, FaSmile, FaMedal, FaStar, FaCheckCircle, FaPaperPlane, FaChartBar, FaTrophy } from 'react-icons/fa';
+import { FaSmile, FaMedal, FaStar, FaCheckCircle, FaPaperPlane, FaChartBar, FaTrophy } from 'react-icons/fa';
+import axios from 'axios';
+import { useUser } from '../UserContext';
+import { useEffect } from 'react';
+import { useRef } from 'react';
 
 const PageBackground = styled.div`
   min-height: 100vh;
-  width: 100vw;
-  background: linear-gradient(120deg, #fbc2eb 0%, #a18cd1 50%, #fcb69f 100%);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 2.5rem 0;
+  width: 100%;
+  background: var(--background);
+  padding: 2rem 1rem;
 `;
 
 const Container = styled.div`
   width: 100%;
-  max-width: 1100px;
-  background: var(--surface-white);
-  border-radius: 28px;
-  box-shadow: var(--shadow-xl);
-  padding: 2.5rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 2rem;
 `;
 
-const Header = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-`;
 
-const ParentInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1.2em;
-`;
-
-const ParentAvatar = styled.div`
-  background: var(--accent-pink);
-  color: #fff;
-  border-radius: 50%;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.2rem;
-  box-shadow: var(--shadow-md);
-`;
-
-const Title = styled.h1`
-  color: var(--primary-purple);
-  font-size: 2.1rem;
-  font-family: 'Poppins', Arial, sans-serif;
-  margin: 0;
-`;
 
 const StudentSwitcher = styled.div`
   display: flex;
@@ -85,9 +52,9 @@ const StudentButton = styled.button`
 
 const DashboardGrid = styled.div`
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 2.5rem;
-  @media (max-width: 900px) {
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  @media (max-width: 1200px) {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
@@ -106,13 +73,15 @@ const RightCol = styled.div`
 `;
 
 const Card = styled.div`
-  background: var(--surface-purple);
+  background: var(--surface-white);
   border-radius: 18px;
   box-shadow: var(--shadow-md);
   padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+  border: 1px solid var(--surface-light);
+  color: var(--text-primary);
 `;
 
 const StudentOverview = styled(Card)`
@@ -168,140 +137,333 @@ const AssignmentsCard = styled(Card)`
   align-items: flex-start;
 `;
 
-const mockParent = {
-  name: 'Mrs. Amina',
-  avatar: <FaUserTie />,
-};
 
-const mockStudents = [
-  {
-    id: 1,
-    name: 'Zara',
-    avatar: '🦄',
-    level: 'Beginner',
-    points: 320,
-    badges: 3,
-    lessons: 12,
-    totalLessons: 20,
-    recentActivity: [
-      'Completed "JavaScript Basics" quiz',
-      'Earned badge: Fast Learner',
-      'Finished Module: HTML & CSS',
-    ],
-  },
-  {
-    id: 2,
-    name: 'Sam',
-    avatar: '🤖',
-    level: 'Intermediate',
-    points: 480,
-    badges: 5,
-    lessons: 18,
-    totalLessons: 20,
-    recentActivity: [
-      'Completed "React Components" lesson',
-      'Earned badge: Code Master',
-      'Took a quiz: Python Loops',
-    ],
-  },
-];
 
 export default function ParentDashboardPage() {
-  const [selectedStudent, setSelectedStudent] = useState(mockStudents[0]);
+  const { user, loading: userLoading } = useUser();
+  const [students, setStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentsLoading, setStudentsLoading] = useState(true);
+  const [studentsError, setStudentsError] = useState('');
   const [encouragement, setEncouragement] = useState('');
   const [sent, setSent] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+  const [newStudentLinked, setNewStudentLinked] = useState(false);
+  const prevStudentCount = useRef(0);
 
-  const handleStudentSwitch = (student) => setSelectedStudent(student);
-  const handleSend = () => {
-    setSent(true);
-    setTimeout(() => setSent(false), 1500);
-    setEncouragement('');
+    const fetchStudents = async () => {
+    setStudentsLoading(true);
+    setStudentsError('');
+    try {
+      const token = localStorage.getItem('codesensai_token');
+      const res = await fetch('/users/students', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.students) {
+        // Notification logic
+        if (prevStudentCount.current !== undefined && data.students.length > prevStudentCount.current) {
+          setNewStudentLinked(true);
+          setTimeout(() => setNewStudentLinked(false), 4000);
+        }
+        prevStudentCount.current = data.students.length;
+        setStudents(data.students);
+        setSelectedStudent(data.students[0] || null);
+      } else {
+        setStudentsError(data.message || 'Could not fetch students.');
+      }
+    } catch (err) {
+      setStudentsError('Could not fetch students.');
+    } finally {
+      setStudentsLoading(false);
+    }
   };
 
-  const progressPercent = Math.round((selectedStudent.lessons / selectedStudent.totalLessons) * 100);
+  useEffect(() => {
+    if (user && user._id) fetchStudents();
+  }, [user]);
+
+  const handleStudentSwitch = (student) => setSelectedStudent(student);
+  const handleSend = async () => {
+    if (!selectedStudent || !encouragement.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('codesensai_token');
+      const res = await fetch(`/users/students/${selectedStudent._id}/encouragement`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: encouragement })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setSent(true);
+        setTimeout(() => setSent(false), 3000);
+        setEncouragement('');
+        // Refresh students to get updated data
+        fetchStudents();
+      } else {
+        console.error('Failed to send encouragement:', data.message);
+      }
+    } catch (err) {
+      console.error('Error sending encouragement:', err);
+    }
+  };
+
+  const handleGenerateInvite = async () => {
+    setInviteLoading(true);
+    setInviteError('');
+    try {
+      const token = localStorage.getItem('codesensai_token');
+      const res = await axios.post('/users/invite-code', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setInviteCode(res.data.code);
+    } catch (err) {
+      console.error('Invite code generation error:', err);
+      setInviteError('Could not generate invite code.');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  if (userLoading || studentsLoading) {
+    return <div style={{padding:'3em', textAlign:'center', color:'#8B5CF6', fontSize:'1.3em'}}>Loading dashboard...</div>;
+  }
 
   return (
     <PageBackground>
       <Container>
-        <Header>
-          <ParentInfo>
-            <ParentAvatar>{mockParent.avatar}</ParentAvatar>
-            <Title>Welcome, {mockParent.name}!</Title>
-          </ParentInfo>
+        {/* Notification for new student linked */}
+        {newStudentLinked && (
+          <div style={{
+            background: 'var(--success-light)',
+            color: 'var(--success)',
+            padding: '1rem 1.5rem',
+            borderRadius: 12,
+            fontWeight: 600,
+            marginBottom: '1rem',
+            textAlign: 'center',
+            fontSize: '1.1rem',
+            boxShadow: 'var(--shadow-sm)',
+            border: '1px solid var(--success)'
+          }}>
+            🎉 A new student has been linked to your account!
+          </div>
+        )}
+        
+        {/* Student Switcher */}
+        {students.length > 1 && (
           <StudentSwitcher>
-            {mockStudents.map((student) => (
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '1.1rem' }}>
+              Select Student:
+            </span>
+            {students.map((student, index) => (
               <StudentButton
-                key={student.id}
-                className={selectedStudent.id === student.id ? 'active' : ''}
+                key={student._id}
                 onClick={() => handleStudentSwitch(student)}
+                className={selectedStudent?._id === student._id ? 'active' : ''}
               >
-                <span style={{fontSize:'1.3em'}}>{student.avatar}</span> {student.name}
+                {student.profile?.avatar || '👧'} {student.username}
               </StudentButton>
             ))}
           </StudentSwitcher>
-        </Header>
+        )}
+        
+        {/* Persistent notification if students exist */}
+        {!newStudentLinked && students.length > 0 && (
+          <div style={{
+            background: 'var(--surface-purple)',
+            color: 'var(--primary-purple)',
+            padding: '1rem 1.5rem',
+            borderRadius: 12,
+            fontWeight: 600,
+            marginBottom: '1rem',
+            textAlign: 'center',
+            fontSize: '1.05rem',
+            boxShadow: 'var(--shadow-sm)',
+            border: '1px solid var(--primary-purple)'
+          }}>
+            You have {students.length} student{students.length > 1 ? 's' : ''} linked to your account.
+          </div>
+        )}
+        {/* Invite Code Section */}
+        <Card style={{marginBottom: '1.5rem'}}>
+          <h3 style={{color:'var(--primary-purple)', margin:'0 0 1rem 0', fontSize:'1.3rem'}}>🎯 Invite a Student</h3>
+          <div style={{display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap'}}>
+            <button
+              onClick={handleGenerateInvite}
+              style={{
+                background:'var(--primary-purple)', 
+                color:'white', 
+                border:'none', 
+                borderRadius:12, 
+                padding:'0.8rem 1.5rem', 
+                fontWeight:600, 
+                cursor:'pointer', 
+                fontSize:'1rem',
+                transition:'all 0.2s',
+                boxShadow:'var(--shadow-sm)'
+              }}
+              disabled={inviteLoading}
+              onMouseEnter={(e) => e.target.style.background = 'var(--accent-pink)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--primary-purple)'}
+            >
+              {inviteLoading ? 'Generating...' : 'Generate Invite Code'}
+            </button>
+            {inviteCode && (
+              <span style={{
+                fontWeight:700, 
+                color:'var(--primary-purple)', 
+                fontSize:'1.1rem',
+                background:'var(--surface-purple)',
+                padding:'0.5rem 1rem',
+                borderRadius:'8px',
+                border:'2px solid var(--primary-purple)'
+              }}>
+                Code: {inviteCode}
+              </span>
+            )}
+          </div>
+          {inviteError && <div style={{color:'var(--error)', marginTop:'0.5rem', fontWeight:600}}>{inviteError}</div>}
+          <div style={{color:'var(--text-secondary)', marginTop:'0.5rem', fontSize:'0.95rem'}}>Share this code with your student. It can only be used once.</div>
+        </Card>
+        {studentsError && (
+          <div style={{padding:'2em', textAlign:'center', color:'#d32f2f', fontSize:'1.1em'}}>{studentsError}</div>
+        )}
         <DashboardGrid>
           <LeftCol>
-            <StudentOverview>
-              <StudentAvatar>{selectedStudent.avatar}</StudentAvatar>
-              <StudentName>{selectedStudent.name}</StudentName>
-              <div style={{color:'var(--text-secondary)', fontWeight:500}}>
-                Level: {selectedStudent.level}
-              </div>
-              <StatRow>
-                <Stat><FaStar /> {selectedStudent.points} pts</Stat>
-                <Stat><FaMedal /> {selectedStudent.badges} badges</Stat>
-                <Stat><FaCheckCircle /> {selectedStudent.lessons}/{selectedStudent.totalLessons} lessons</Stat>
-              </StatRow>
-            </StudentOverview>
-            <ActivityFeed>
-              <h3 style={{color:'var(--primary-purple)', margin:'0 0 0.7em 0'}}>Recent Activity</h3>
-              <ul style={{padding:0, margin:0, listStyle:'none'}}>
-                {selectedStudent.recentActivity.map((item, idx) => (
-                  <li key={idx} style={{marginBottom:'0.5em', display:'flex', alignItems:'center', gap:'0.5em', color:'var(--primary-purple)'}}>
-                    <FaCheckCircle /> {item}
-                  </li>
-                ))}
-              </ul>
-            </ActivityFeed>
+            {(!selectedStudent || students.length === 0) ? (
+              <div style={{padding:'2em', textAlign:'center', color:'#8B5CF6', fontSize:'1.1em'}}>No students linked yet. Generate an invite code and have your student register!</div>
+            ) : (
+              <>
+                <StudentOverview>
+                  <div style={{display:'flex', alignItems:'center', gap:'1rem', marginBottom:'1rem'}}>
+                    <StudentAvatar>{selectedStudent.profile?.avatar || '👧'}</StudentAvatar>
+                    <div>
+                      <StudentName>{selectedStudent.username}</StudentName>
+                      <div style={{color:'var(--text-secondary)', fontWeight:500, fontSize:'1rem'}}>
+                        Level: {selectedStudent.profile?.level || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  <StatRow>
+                    <Stat><FaStar style={{color:'var(--accent-yellow)'}} /> {selectedStudent.profile?.points || 0} pts</Stat>
+                    <Stat><FaMedal style={{color:'var(--accent-orange)'}} /> {selectedStudent.profile?.badges?.length || 0} badges</Stat>
+                    <Stat><FaCheckCircle style={{color:'var(--success)'}} /> {selectedStudent.profile?.completedLessons?.length || 0}/{20} lessons</Stat>
+                  </StatRow>
+                </StudentOverview>
+                <ActivityFeed>
+                  <h3 style={{color:'var(--primary-purple)', margin:'0 0 1rem 0', fontSize:'1.3rem'}}>📊 Recent Activity</h3>
+                  <ul style={{padding:0, margin:0, listStyle:'none'}}>
+                    {selectedStudent.profile?.recentActivity?.length > 0 ? (
+                      selectedStudent.profile.recentActivity.map((item, idx) => (
+                        <li key={idx} style={{
+                          marginBottom:'0.8rem', 
+                          display:'flex', 
+                          alignItems:'center', 
+                          gap:'0.5rem', 
+                          color:'var(--text-primary)',
+                          padding:'0.5rem',
+                          background:'var(--surface-light)',
+                          borderRadius:'8px',
+                          fontSize:'0.95rem'
+                        }}>
+                          <FaCheckCircle style={{color:'var(--success)'}} /> {item}
+                        </li>
+                      ))
+                    ) : (
+                      <li style={{color:'var(--text-secondary)', fontStyle:'italic'}}>No recent activity</li>
+                    )}
+                  </ul>
+                </ActivityFeed>
+              </>
+            )}
           </LeftCol>
           <RightCol>
             <ProgressChart>
-              <h3 style={{color:'var(--primary-purple)', margin:'0 0 0.7em 0'}}>Progress</h3>
-              <div style={{width:'100%', background:'var(--surface-white)', borderRadius:12, height:22, marginBottom:10, boxShadow:'var(--shadow-sm)'}}>
-                <div style={{width:`${progressPercent}%`, height:'100%', background:'linear-gradient(90deg, #8B5CF6 60%, #F59E0B 100%)', borderRadius:12, transition:'width 0.6s'}}></div>
+              <h3 style={{color:'var(--primary-purple)', margin:'0 0 1rem 0', fontSize:'1.3rem'}}>📊 Progress</h3>
+              <div style={{width:'100%', background:'var(--surface-light)', borderRadius:12, height:24, marginBottom:12, boxShadow:'var(--shadow-sm)'}}>
+                <div style={{
+                  width:`${selectedStudent && selectedStudent.profile?.completedLessons ? Math.round((selectedStudent.profile.completedLessons.length / 20) * 100) : 0}%`, 
+                  height:'100%', 
+                  background:'linear-gradient(90deg, var(--primary-purple) 0%, var(--accent-pink) 100%)', 
+                  borderRadius:12, 
+                  transition:'width 0.6s'
+                }}></div>
               </div>
-              <div style={{color:'var(--primary-purple)', fontWeight:600}}>{progressPercent}% complete</div>
+              <div style={{color:'var(--primary-purple)', fontWeight:600, fontSize:'1.1rem', textAlign:'center'}}>
+                {selectedStudent && selectedStudent.profile?.completedLessons ? Math.round((selectedStudent.profile.completedLessons.length / 20) * 100) : 0}% complete
+              </div>
             </ProgressChart>
             <EncouragementCard>
-              <h3 style={{color:'var(--primary-purple)', margin:'0 0 0.7em 0'}}>Send Encouragement</h3>
-              <div style={{display:'flex', gap:'0.7em', alignItems:'center', marginBottom:'0.7em'}}>
-                <FaSmile style={{fontSize:'1.5em', color:'var(--accent-pink)'}} />
+              <h3 style={{color:'var(--primary-purple)', margin:'0 0 1rem 0', fontSize:'1.3rem'}}>💌 Send Encouragement</h3>
+              <div style={{display:'flex', gap:'0.7rem', alignItems:'center', marginBottom:'1rem', flexWrap:'wrap'}}>
+                <FaSmile style={{fontSize:'1.5rem', color:'var(--accent-pink)'}} />
                 <input
                   type="text"
                   value={encouragement}
                   onChange={e => setEncouragement(e.target.value)}
                   placeholder="Type a message or emoji!"
-                  style={{flex:1, borderRadius:12, border:'1px solid var(--accent-pink)', padding:'0.5em 1em', fontSize:'1rem'}}
+                  style={{
+                    flex:1, 
+                    borderRadius:12, 
+                    border:'2px solid var(--surface-light)', 
+                    background:'var(--surface-white)',
+                    color:'var(--text-primary)',
+                    padding:'0.8rem 1rem', 
+                    fontSize:'1rem',
+                    minWidth:'200px'
+                  }}
                 />
                 <button
                   onClick={handleSend}
-                  style={{background:'var(--accent-pink)', color:'#fff', border:'none', borderRadius:12, padding:'0.5em 1.2em', fontWeight:600, cursor:'pointer', fontSize:'1rem'}}
+                  style={{
+                    background:'var(--primary-purple)', 
+                    color:'white', 
+                    border:'none', 
+                    borderRadius:12, 
+                    padding:'0.8rem 1.5rem', 
+                    fontWeight:600, 
+                    cursor:'pointer', 
+                    fontSize:'1rem',
+                    transition:'all 0.2s',
+                    boxShadow:'var(--shadow-sm)'
+                  }}
                   disabled={!encouragement.trim()}
+                  onMouseEnter={(e) => e.target.style.background = 'var(--accent-pink)'}
+                  onMouseLeave={(e) => e.target.style.background = 'var(--primary-purple)'}
                 >
                   <FaPaperPlane /> Send
                 </button>
               </div>
-              {sent && <div style={{color:'var(--success)', fontWeight:600}}>Message sent! 🎉</div>}
+              {sent && (
+                <div style={{
+                  color:'var(--success)', 
+                  fontWeight:600, 
+                  textAlign:'center', 
+                  padding:'0.8rem', 
+                  background:'var(--success-light)', 
+                  borderRadius:'8px',
+                  border:'1px solid var(--success)'
+                }}>
+                  💝 Message sent! 🎉
+                </div>
+              )}
             </EncouragementCard>
             <AssignmentsCard>
-              <h3 style={{color:'var(--primary-purple)', margin:'0 0 0.7em 0'}}>Assignments & Recommendations</h3>
+              <h3 style={{color:'white', margin:'0 0 0.7em 0', fontSize:'1.3rem'}}>🎯 Assignments & Recommendations</h3>
               <ul style={{padding:0, margin:0, listStyle:'none'}}>
-                <li style={{marginBottom:'0.5em', display:'flex', alignItems:'center', gap:'0.5em'}}>
-                  <FaTrophy style={{color:'var(--accent-yellow)'}} /> Try the "Advanced JavaScript" module next!
+                <li style={{marginBottom:'0.8em', display:'flex', alignItems:'center', gap:'0.5em', color:'white', fontSize:'1rem'}}>
+                  <FaTrophy style={{color:'#FFD700'}} /> Try the "Advanced JavaScript" module next!
                 </li>
-                <li style={{marginBottom:'0.5em', display:'flex', alignItems:'center', gap:'0.5em'}}>
-                  <FaChartBar style={{color:'var(--primary-purple)'}} /> Take the "React Basics" quiz for extra points!
+                <li style={{marginBottom:'0.8em', display:'flex', alignItems:'center', gap:'0.5em', color:'white', fontSize:'1rem'}}>
+                  <FaChartBar style={{color:'#FFD700'}} /> Take the "React Basics" quiz for extra points!
                 </li>
               </ul>
             </AssignmentsCard>

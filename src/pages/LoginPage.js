@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../api';
 import { useUser } from '../UserContext';
+import Spinner from '../components/Spinner';
 
 const Wrapper = styled.section`
   display: flex;
@@ -23,9 +24,9 @@ const Title = styled.h2`
 `;
 
 const Form = styled.form`
-  background: #fff;
+  background: var(--surface-white);
   border-radius: 20px;
-  box-shadow: 0 2px 12px rgba(142, 68, 173, 0.08);
+  box-shadow: var(--shadow-md);
   padding: 2rem 2.5rem;
   display: flex;
   flex-direction: column;
@@ -191,10 +192,27 @@ const LoginPage = () => {
         login(result.user);
         setSuccess(true);
         setTimeout(() => {
-          navigate('/onboarding');
+          // Check if user has completed onboarding (has profile data)
+          console.log('Login result user:', result.user); // Debug log
+          console.log('Profile data:', result.user.profile); // Debug log
+          console.log('completedOnboarding value:', result.user.profile?.completedOnboarding); // Debug log
+          
+          const hasProfileData = result.user.profile?.age || result.user.profile?.interests || result.user.profile?.bio;
+          const completedOnboarding = result.user.profile?.completedOnboarding === true || hasProfileData;
+          
+          if (completedOnboarding) {
+            navigate('/dashboard');
+          } else {
+            navigate('/onboarding');
+          }
         }, 1500);
       } else {
-        setError(result.error || 'Oops! That username or password is not quite right. Try again! 🔍');
+        // Handle email verification error
+        if (result.error && result.error.includes('verify your email')) {
+          setError('Please check your email and verify your account before logging in! 📧');
+        } else {
+          setError(result.error || 'Oops! Something went wrong. Let us try again! 🔧');
+        }
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -240,7 +258,14 @@ const LoginPage = () => {
         </Select>
 
         <SubmitButton type="submit" disabled={loading}>
-          {loading ? 'Logging you in... ✨' : 'Let us Start Coding! 🚀'}
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Spinner size="small" inline />
+              Logging you in... ✨
+            </div>
+          ) : (
+            'Let us Start Coding! 🚀'
+          )}
         </SubmitButton>
       </Form>
       <RegisterLink>

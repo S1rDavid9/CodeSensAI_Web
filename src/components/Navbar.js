@@ -211,14 +211,27 @@ const Navbar = () => {
               <UserAvatar>{getInitials(user?.username)}</UserAvatar>
               <UserName>{user?.username}</UserName>
             </UserInfo>
-            <StyledLink to="/dashboard">📊 Dashboard</StyledLink>
-            <StyledLink to="/quizzes">🧩 Quizzes</StyledLink>
-            <StyledLink to="/sandbox">💻 Sandbox</StyledLink>
-            <StyledLink to="/profile">👤 Profile</StyledLink>
-            <ThemeToggleButton onClick={toggleTheme}>
-              {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? "Dark" : "Light"}
-            </ThemeToggleButton>
-            <LogoutButton onClick={handleLogout}>🚪 Logout</LogoutButton>
+            {user?.role === 'parent' ? (
+              <>
+                <StyledLink to="/parent-dashboard">👨‍👧‍👦 Parent Dashboard</StyledLink>
+                <StyledLink to="/profile">👤 Profile</StyledLink>
+                <ThemeToggleButton onClick={toggleTheme}>
+                  {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? "Dark" : "Light"}
+                </ThemeToggleButton>
+                <LogoutButton onClick={handleLogout}>🚪 Logout</LogoutButton>
+              </>
+            ) : (
+              <>
+                <StyledLink to="/dashboard">📊 Dashboard</StyledLink>
+                <StyledLink to="/quizzes">🧩 Quizzes</StyledLink>
+                <StyledLink to="/sandbox">💻 Sandbox</StyledLink>
+                <StyledLink to="/profile">👤 Profile</StyledLink>
+                <ThemeToggleButton onClick={toggleTheme}>
+                  {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? "Dark" : "Light"}
+                </ThemeToggleButton>
+                <LogoutButton onClick={handleLogout}>🚪 Logout</LogoutButton>
+              </>
+            )}
           </>
         ) : (
           <>

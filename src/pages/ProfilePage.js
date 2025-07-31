@@ -3,39 +3,33 @@ import styled from 'styled-components';
 import { useUser } from '../UserContext';
 import { updateUserProfile } from '../api';
 import { FaMedal, FaCheckCircle, FaStar, FaEdit, FaUser } from 'react-icons/fa';
+import Spinner from '../components/Spinner';
 
-const PageBackground = styled.div`
+const Wrapper = styled.section`
   min-height: 100vh;
-  width: 100vw;
-  background: linear-gradient(120deg, #fbc2eb 0%, #a18cd1 50%, #fcb69f 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 0;
-  transition: background 0.3s;
+  background: var(--background);
+  padding: 2rem 1rem;
 `;
 
-const Card = styled.section`
+const Container = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+`;
+
+const ProfileCard = styled.div`
   background: var(--surface-white);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
-  padding: 2.5rem 2.5rem 2rem 2.5rem;
-  max-width: 700px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
   position: relative;
-  @media (max-width: 600px) {
-    padding: 1.2rem 0.5rem 1.5rem 0.5rem;
-    max-width: 98vw;
-  }
+  border: 1px solid var(--surface-light);
 `;
 
 const EditFab = styled.button`
   position: absolute;
-  top: 1.2rem;
-  right: 1.2rem;
+  top: 1.5rem;
+  right: 1.5rem;
   background: var(--accent-pink);
   color: #fff;
   border: none;
@@ -269,34 +263,9 @@ const mockActivity = [
   'Completed "React Components" lesson',
 ];
 
-const Layout = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 2.5rem;
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  @media (max-width: 900px) {
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-  }
-`;
+// Removed unused Layout component
 
-const EditCard = styled(Card)`
-  max-width: 400px;
-  min-width: 320px;
-  box-shadow: var(--shadow-xl);
-  background: var(--surface-white);
-  z-index: 2;
-  @media (max-width: 900px) {
-    width: 100%;
-    min-width: unset;
-    max-width: 98vw;
-    margin: 0 auto;
-  }
-`;
+
 
 const FunInfo = styled.div`
   color: var(--text-primary);
@@ -322,18 +291,45 @@ const ProfilePage = () => {
   const [editAvatar, setEditAvatar] = useState('');
   const [editTagline, setEditTagline] = useState('');
   const [editAge, setEditAge] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // start as true
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+
+  // Simulate loading like DashboardPage
+  React.useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   React.useEffect(() => {
-    if (user) {
-      setEditInterests(user.interests?.join(', ') || '');
-      setEditAvatar(user.profile?.avatar || '🦄');
-      setEditTagline(user.tagline || '');
-      setEditAge(user.age || '');
+    if (user && user.role === 'parent') {
+      const fetchStudents = async () => {
+        setStudentsLoading(true);
+        try {
+          const token = localStorage.getItem('codesensai_token');
+          const res = await fetch('/users/students', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (res.ok && data.students) {
+            setStudents(data.students);
+          } else {
+            setStudents([]);
+          }
+        } catch (err) {
+          setStudents([]);
+        } finally {
+          setStudentsLoading(false);
+        }
+      };
+      fetchStudents();
     }
   }, [user]);
+
+  // Remove the refreshUserData useEffect that was causing excessive API calls
+  // The UserContext already handles user data management properly
 
   const handleSave = async () => {
     if (!user) return;
@@ -348,12 +344,12 @@ const ProfilePage = () => {
         ...(user.profile?.recentActivity || [])
       ].slice(0, 5); // keep max 5
       const profileData = {
-        interests: editInterests.split(',').map(i => i.trim()).filter(i => i),
-        tagline: editTagline,
-        age: editAge,
         profile: {
           ...user.profile,
           avatar: editAvatar,
+          bio: editTagline,
+          age: editAge,
+          interests: editInterests.split(',').map(i => i.trim()).filter(i => i),
           recentActivity: updatedActivity
         }
       };
@@ -373,27 +369,41 @@ const ProfilePage = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <PageBackground>
-        <Card>
-          <Title>Loading profile...</Title>
-        </Card>
-      </PageBackground>
-    );
+  if (loading || !user || studentsLoading) {
+    return <Spinner message="Let's take a look at your profile..." />;
   }
 
-  const progress = user.profile?.completedLessons?.length || 0;
+  // Role-specific calculations
+  const isStudent = user.role === 'student';
+  
+  const progress = isStudent ? (user.profile?.completedLessons?.length || 0) : 0;
   const totalLessons = 20;
-  const progressPercentage = Math.round((progress / totalLessons) * 100);
-  const activity = user.profile?.recentActivity && user.profile.recentActivity.length > 0
+  const progressPercentage = isStudent ? Math.round((progress / totalLessons) * 100) : 0;
+  const activity = isStudent && user.profile?.recentActivity && user.profile.recentActivity.length > 0
     ? user.profile.recentActivity
     : mockActivity;
 
   return (
-    <PageBackground>
-      <Layout>
-        <Card>
+    <Wrapper>
+      <Container>
+        {/* Student-parent link notification */}
+        {isStudent && user.parentId && (
+          <div style={{
+            background: 'var(--success-light)',
+            color: 'var(--primary-green)',
+            padding: '0.7em 1.2em',
+            borderRadius: 12,
+            fontWeight: 600,
+            marginBottom: '1em',
+            textAlign: 'center',
+            fontSize: '1.1em',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            🎉 You are linked to your parent!
+          </div>
+        )}
+        
+        <ProfileCard>
           <EditFab title="Edit Profile" onClick={() => setEditing(!editing)}>
             <FaEdit style={{fontSize:'1.3em'}} /> Edit Profile
           </EditFab>
@@ -401,6 +411,8 @@ const ProfilePage = () => {
           <Title>{user.username || 'User'}</Title>
           <Tagline>{user.tagline || 'Welcome to your profile!'}</Tagline>
           <StatsRow>
+            {isStudent ? (
+              <>
             <StatCard>
               <StatIcon><FaStar /></StatIcon>
               <StatNumber>{user.profile?.points || 0}</StatNumber>
@@ -416,14 +428,44 @@ const ProfilePage = () => {
               <StatNumber>{progressPercentage}%</StatNumber>
               <StatLabel>Progress</StatLabel>
             </StatCard>
+              </>
+            ) : (
+              <>
+                <StatCard>
+                  <StatIcon><FaUser /></StatIcon>
+                  <StatNumber>{studentsLoading ? '...' : students.length}</StatNumber>
+                  <StatLabel>Children</StatLabel>
+                </StatCard>
+                <StatCard>
+                  <StatIcon><FaCheckCircle /></StatIcon>
+                  <StatNumber>Active</StatNumber>
+                  <StatLabel>Status</StatLabel>
+                </StatCard>
+                <StatCard>
+                  <StatIcon><FaMedal /></StatIcon>
+                  <StatNumber>Parent</StatNumber>
+                  <StatLabel>Role</StatLabel>
+                </StatCard>
+              </>
+            )}
           </StatsRow>
-          <FunInfo>🎂 <b>You're in the {user.age || 'mystery'} explorer squad!</b></FunInfo>
-          <FunInfo>🎯 <b>Your learning quest:</b> {user.interests?.length ? user.interests.map(i => i.charAt(0).toUpperCase() + i.slice(1)).join(', ') : 'Not set yet!'} 🚀</FunInfo>
+          {isStudent ? (
+            <>
+              <FunInfo>🎂 <b>You're in the {user.profile?.age || 'mystery'} explorer squad!</b></FunInfo>
+              <FunInfo>🎯 <b>Your learning quest:</b> {user.profile?.interests?.length ? user.profile.interests.map(i => i.charAt(0).toUpperCase() + i.slice(1)).join(', ') : 'Not set yet!'} 🚀</FunInfo>
           <ProgressBar>
             <ProgressFill progress={progressPercentage} />
           </ProgressBar>
+            </>
+          ) : (
+            <>
+              <FunInfo>👨‍👧‍👦 <b>You're a proud parent supporting {studentsLoading ? '...' : students.length} child(ren)!</b></FunInfo>
+              <FunInfo>📱 <b>Contact:</b> {user.profile?.phone || 'Not set yet!'}</FunInfo>
+            </>
+          )}
           {error && <div style={{color: '#d32f2f', marginBottom: '1em', fontWeight: 600}}>{error}</div>}
           {success && <div style={{color: 'var(--success)', marginBottom: '1em', fontWeight: 600}}>Profile updated! 🎉</div>}
+          {isStudent && (
           <ActivitySection>
             <ActivityTitle>Recent Activity</ActivityTitle>
             <ActivityList>
@@ -432,16 +474,70 @@ const ProfilePage = () => {
               ))}
             </ActivityList>
           </ActivitySection>
+          )}
+          
+          {/* Debug Info */}
+          
+          {/* Encouragements Section for Students */}
+          {isStudent && (
+            <ActivitySection>
+              <ActivityTitle>💌 Messages from Your Parent</ActivityTitle>
+              {user.profile?.encouragements && user.profile.encouragements.length > 0 ? (
+                <ActivityList>
+                  {user.profile.encouragements.map((encouragement, idx) => (
+                    <ActivityItem key={idx} style={{ 
+                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                      color: 'white',
+                      padding: '0.8em 1.2em',
+                      borderRadius: '12px',
+                      marginBottom: '0.8em',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}>
+                      <div style={{ fontWeight: '600', marginBottom: '0.3em' }}>
+                        💝 {encouragement.message}
+                      </div>
+                      <div style={{ fontSize: '0.9em', opacity: '0.9' }}>
+                        From: {encouragement.from} • {new Date(encouragement.timestamp).toLocaleDateString()}
+                      </div>
+                    </ActivityItem>
+                  ))}
+                </ActivityList>
+              ) : (
+                <div style={{
+                  background: 'var(--surface-light)',
+                  color: 'var(--text-secondary)',
+                  padding: '1rem',
+                  borderRadius: '12px',
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                  border: '2px dashed var(--surface-purple)'
+                }}>
+                  💌 No messages yet from your parent. They can send you encouraging messages from their dashboard!
+                </div>
+              )}
+            </ActivitySection>
+          )}
           <FunNavBar>
+            {isStudent ? (
+              <>
             <FunNavButton href="/quizzes">🧩 Take a Quiz!</FunNavButton>
             <FunNavButton href="/sandbox">💻 Jump into Sandbox!</FunNavButton>
             <FunNavButton href="/progress">📊 See Your Progress!</FunNavButton>
             <FunNavButton href="/settings">⚙️ Settings</FunNavButton>
             <FunNavButton href="/">🏠 Home</FunNavButton>
+              </>
+            ) : (
+              <>
+                <FunNavButton href="/parent-dashboard">👨‍👧‍👦 Parent Dashboard</FunNavButton>
+                <FunNavButton href="/settings">⚙️ Settings</FunNavButton>
+                <FunNavButton href="/">🏠 Home</FunNavButton>
+              </>
+            )}
           </FunNavBar>
-        </Card>
+        </ProfileCard>
+        
         {editing && (
-          <EditCard>
+          <ProfileCard>
             <Title>Edit Profile</Title>
             <div style={{ marginBottom: '0.7em' }}>Pick Your Avatar:</div>
             <AvatarPickerRow>
@@ -461,6 +557,8 @@ const ProfilePage = () => {
               onChange={e => setEditTagline(e.target.value)}
               placeholder="Enter a short tagline or bio"
             />
+            {isStudent ? (
+              <>
             <div>Edit Age Group:</div>
             <EditInput
               value={editAge}
@@ -473,14 +571,25 @@ const ProfilePage = () => {
               onChange={e => setEditInterests(e.target.value)}
               placeholder="Enter your interests separated by commas"
             />
+              </>
+            ) : (
+              <>
+                <div>Edit Phone Number:</div>
+                <EditInput
+                  value={editAge} // Reusing editAge state for phone
+                  onChange={e => setEditAge(e.target.value)}
+                  placeholder="Enter your phone number"
+                />
+              </>
+            )}
             <SaveButton onClick={handleSave} disabled={loading}>
               {loading ? 'Saving...' : 'Save'}
             </SaveButton>
             <SaveButton style={{background:'var(--surface-purple)', color:'var(--primary-purple)', marginLeft:0, marginTop:'0.7em'}} onClick={()=>setEditing(false)} type="button">Cancel</SaveButton>
-          </EditCard>
+          </ProfileCard>
         )}
-      </Layout>
-    </PageBackground>
+      </Container>
+    </Wrapper>
   );
 };
 

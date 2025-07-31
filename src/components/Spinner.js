@@ -23,11 +23,11 @@ const SpinnerContainer = styled.div`
 `;
 
 const SpinnerElement = styled.div`
-  border: 6px solid rgba(255, 255, 255, 0.3);
-  border-top: 6px solid var(--accent);
+  border: ${props => props.size === 'small' ? '3px' : '6px'} solid rgba(255, 255, 255, 0.3);
+  border-top: ${props => props.size === 'small' ? '3px' : '6px'} solid var(--accent);
   border-radius: 50%;
-  width: 48px;
-  height: 48px;
+  width: ${props => props.size === 'small' ? '24px' : '48px'};
+  height: ${props => props.size === 'small' ? '24px' : '48px'};
   animation: spin 1s linear infinite;
   
   @keyframes spin {
@@ -51,15 +51,24 @@ const messages = [
   "Loading magic... ✨"
 ];
 
-export default function Spinner({ message }) {
+export default function Spinner({ message, size, inline = false }) {
   const [currentMessage] = useState(
     message || messages[Math.floor(Math.random() * messages.length)]
   );
 
+  if (inline) {
+    return (
+      <SpinnerContainer>
+        <SpinnerElement size={size} />
+        {message && <LoadingText>{currentMessage}</LoadingText>}
+      </SpinnerContainer>
+    );
+  }
+
   return (
     <SpinnerOverlay>
       <SpinnerContainer>
-        <SpinnerElement />
+        <SpinnerElement size={size} />
         <LoadingText>{currentMessage}</LoadingText>
       </SpinnerContainer>
     </SpinnerOverlay>

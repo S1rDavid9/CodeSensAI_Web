@@ -1,9 +1,16 @@
 // API utility for CodeSensAI backend
 
+// API base URL - configurable for production
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+
 // Token management
 const getToken = () => localStorage.getItem('codesensai_token');
 const setToken = (token) => localStorage.setItem('codesensai_token', token);
 const removeToken = () => localStorage.removeItem('codesensai_token');
+
+// Debouncing mechanism for verifyToken
+let lastVerifyCall = 0;
+const VERIFY_COOLDOWN = 60000; // 60 seconds cooldown
 
 // Helper function to make authenticated requests
 const authenticatedFetch = async (url, options = {}) => {
@@ -17,7 +24,7 @@ const authenticatedFetch = async (url, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
   
-  const response = await fetch(url, {
+  const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     headers,
   });
@@ -31,12 +38,12 @@ const authenticatedFetch = async (url, options = {}) => {
   return response;
 };
 
-export async function registerUser({ username, password, role, email, age, interests }) {
+export async function registerUser({ username, password, role, email, age, interests, inviteCode }) {
   try {
-    const res = await fetch('/users/register', {
+    const res = await fetch(`${API_BASE_URL}/users/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, role, email, age, interests }),
+      body: JSON.stringify({ username, password, role, email, age, interests, inviteCode }),
     });
     const data = await res.json();
     
@@ -56,7 +63,7 @@ export async function registerUser({ username, password, role, email, age, inter
 
 export async function loginUser({ identifier, password }) {
   try {
-    const res = await fetch('/users/login', {
+    const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: identifier, password }),
@@ -73,6 +80,50 @@ export async function loginUser({ identifier, password }) {
     }
   } catch (error) {
     console.error('Login error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function verifyEmail(token) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/users/verify-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      return { success: true, message: data.message, user: data.user };
+    } else {
+      return { success: false, error: data.message || 'Email verification failed' };
+    }
+  } catch (error) {
+    console.error('Email verification error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function resendVerificationEmail(email) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/users/resend-verification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      return { success: true, message: data.message };
+    } else {
+      return { success: false, error: data.message || 'Failed to resend verification email' };
+    }
+  } catch (error) {
+    console.error('Resend verification error:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
@@ -108,16 +159,45 @@ export async function updateUserProfile(profileData) {
 }
 
 export async function updateUserProgress(progressData) {
-  const res = await authenticatedFetch('/users/progress', {
-    method: 'POST',
-    body: JSON.stringify(progressData),
-  });
-  return res.json();
+  try {
+    const res = await authenticatedFetch('/users/progress', {
+      method: 'POST',
+      body: JSON.stringify(progressData),
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      return { success: true, user: data.user };
+    } else {
+      return { success: false, error: data.message || 'Failed to update progress' };
+    }
+  } catch (error) {
+    console.error('Error updating progress:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
 }
 
 export async function verifyToken() {
-  const res = await authenticatedFetch('/users/verify');
-  return res.json();
+  const now = Date.now();
+  
+  // Check if we're within the cooldown period
+  if (now - lastVerifyCall < VERIFY_COOLDOWN) {
+    // Return cached result or skip verification
+    const cachedUser = getCurrentUser();
+    if (cachedUser) {
+      return { valid: true, user: cachedUser };
+    }
+    return { valid: false };
+  }
+  
+  try {
+    lastVerifyCall = now;
+    const res = await authenticatedFetch('/users/verify');
+    return res.json();
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return { valid: false };
+  }
 }
 
 // Check if user is authenticated

@@ -3,7 +3,6 @@ import styled, { keyframes } from 'styled-components';
 import { useUser } from '../UserContext';
 import { Link } from 'react-router-dom';
 import Spinner from '../components/Spinner';
-import ModuleViewer from '../components/ModuleViewer';
 import modules from '../data/modules';
 
 const fadeInUp = keyframes`
@@ -264,6 +263,132 @@ const ActionDescription = styled.p`
   line-height: 1.5;
 `;
 
+const ModuleSection = styled.div`
+  background: var(--surface-white);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--surface-light);
+  margin-bottom: 2rem;
+  animation: ${fadeInUp} 0.8s ease-out 0.4s both;
+`;
+
+const ModuleTitle = styled.h3`
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const ModuleGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+`;
+
+const ModuleCard = styled(Link)`
+  background: var(--surface-white);
+  border: 2px solid var(--surface-light);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-purple);
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &.completed {
+    border-color: var(--success);
+    background: linear-gradient(135deg, var(--success-light), var(--success-lighter));
+  }
+  
+  &.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+    
+    &:hover {
+      transform: none;
+      box-shadow: var(--shadow-lg);
+    }
+  }
+`;
+
+const ModuleCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+`;
+
+const ModuleCardTitle = styled.h4`
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+`;
+
+const ModuleCardStatus = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  
+  &.completed {
+    color: var(--success);
+  }
+  
+  &.locked {
+    color: var(--text-secondary);
+  }
+`;
+
+const ModuleCardDescription = styled.p`
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+`;
+
+const ModuleCardMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+`;
+
+const ModuleCardMetaItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
 const RecentActivity = styled.div`
   background: var(--surface-white);
   border-radius: var(--radius-xl);
@@ -409,7 +534,51 @@ const DashboardPage = () => {
             <StatLabel>Lessons Remaining</StatLabel>
           </StatCard>
         </StatsGrid>
-        <ModuleViewer onNotify={handleNotify} />
+
+        <ModuleSection>
+          <ModuleTitle>
+            📚 Learning Modules
+          </ModuleTitle>
+          <ModuleGrid>
+            {modules.map((module) => {
+              const isCompleted = user.profile?.completedLessons?.includes(module.id);
+              const isLocked = module.prerequisites?.some(prereq => 
+                !user.profile?.completedLessons?.includes(prereq)
+              );
+              
+              return (
+                <ModuleCard
+                  key={module.id}
+                  to={isLocked ? '#' : `/module/${module.id}`}
+                  className={`${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`}
+                  onClick={isLocked ? (e) => e.preventDefault() : undefined}
+                >
+                  <ModuleCardHeader>
+                    <ModuleCardTitle>{module.title}</ModuleCardTitle>
+                    <ModuleCardStatus className={isCompleted ? 'completed' : isLocked ? 'locked' : ''}>
+                      {isCompleted ? '✅ Completed' : isLocked ? '🔒 Locked' : '🎯 Available'}
+                    </ModuleCardStatus>
+                  </ModuleCardHeader>
+                  <ModuleCardDescription>{module.description}</ModuleCardDescription>
+                  <ModuleCardMeta>
+                    <ModuleCardMetaItem>
+                      <span>⏱️</span>
+                      {module.estimatedTime}
+                    </ModuleCardMetaItem>
+                    <ModuleCardMetaItem>
+                      <span>🏆</span>
+                      {module.badge}
+                    </ModuleCardMetaItem>
+                    <ModuleCardMetaItem>
+                      <span>📊</span>
+                      {module.level}
+                    </ModuleCardMetaItem>
+                  </ModuleCardMeta>
+                </ModuleCard>
+              );
+            })}
+          </ModuleGrid>
+        </ModuleSection>
 
         <ProgressSection>
           <ProgressHeader>

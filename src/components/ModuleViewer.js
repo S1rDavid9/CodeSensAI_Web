@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import modules from "../data/modules";
 import { useUser } from "../UserContext";
+import { updateUserProgress } from "../api";
 
 // Sound effect hooks
 const playSound = (src) => {
@@ -185,41 +186,67 @@ const ModuleViewer = ({ onNotify }) => {
   const module = modules.find((m) => m.id === selectedModuleId);
 
   const handleModuleSelect = (id) => {
+    console.log('=== MODULE SELECTED ==='); // Debug log
+    console.log('Module ID:', id); // Debug log
+    console.log('Module:', modules.find(m => m.id === id)); // Debug log
     setSelectedModuleId(id);
     setStep(0);
     setModuleCompleted(false);
   };
 
-  const handleCompleteModule = () => {
+  const handleCompleteModule = async () => {
     if (!user) return;
+    console.log('=== MODULE COMPLETION START ==='); // Debug log
+    console.log('User before completion:', user); // Debug log
+    console.log('Module being completed:', module); // Debug log
+    
     const completedLessons = user.profile?.completedLessons || [];
     let didComplete = false;
     let didEarnBadge = false;
     let didEarnPoints = false;
     let badgeName = module.badge;
     let pointsEarned = 0;
+    
     if (!completedLessons.includes(module.id)) {
-      const newCompleted = [...completedLessons, module.id];
+      console.log('Module not completed yet, proceeding with completion...'); // Debug log
       const badges = user.profile?.badges || [];
-      let newBadges = badges;
       if (module.badge && !badges.includes(module.badge)) {
-        newBadges = [...badges, module.badge];
         didEarnBadge = true;
+        console.log('Will earn badge:', module.badge); // Debug log
       }
-      const points = user.profile?.points || 0;
       pointsEarned = 50 + (didEarnBadge ? 50 : 0);
-      const newPoints = points + pointsEarned;
-      updateUser({
-        profile: {
-          ...user.profile,
-          completedLessons: newCompleted,
-          badges: newBadges,
-          points: newPoints,
-        },
-      });
-      didComplete = true;
-      didEarnPoints = true;
+      console.log('Will earn points:', pointsEarned); // Debug log
+      
+      // Save progress to backend
+      try {
+        const progressData = {
+          lessonId: module.id,
+          completed: true,
+          score: pointsEarned,
+          timeSpent: 0,
+          badge: module.badge // Send badge information to backend
+        };
+        
+        console.log('Saving progress data:', progressData); // Debug log
+        const result = await updateUserProgress(progressData);
+        console.log('Progress save result:', result); // Debug log
+        
+        if (result.success) {
+          // Update local state with the response from backend
+          console.log('Backend response user:', result.user); // Debug log
+          updateUser(result.user);
+          didComplete = true;
+          didEarnPoints = true;
+          console.log('Progress saved successfully!'); // Debug log
+          console.log('User after update:', result.user); // Debug log
+        } else {
+          console.error('Failed to save progress:', result.error);
+        }
+      } catch (error) {
+        console.error('Error saving progress:', error);
+      }
     }
+    
     setModuleCompleted(true);
     // Notify dashboard and play sounds
     if (onNotify) {
@@ -321,7 +348,13 @@ const ModuleViewer = ({ onNotify }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
         <button onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0} style={{ background: '#e0e7ff', color: '#7c3aed', border: 'none', borderRadius: 12, padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: 16, cursor: step === 0 ? 'not-allowed' : 'pointer', opacity: step === 0 ? 0.5 : 1 }}>Back</button>
         {isLastStep ? (
-          <button onClick={handleCompleteModule} style={{ background: '#22c55e', color: '#fff', border: 'none', borderRadius: 12, padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>
+          <button onClick={() => {
+            console.log('=== FINISH MODULE BUTTON CLICKED ==='); // Debug log
+            console.log('Current step:', step); // Debug log
+            console.log('Total steps:', steps.length); // Debug log
+            console.log('Is last step:', isLastStep); // Debug log
+            handleCompleteModule();
+          }} style={{ background: '#22c55e', color: '#fff', border: 'none', borderRadius: 12, padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>
             {moduleCompleted ? 'Module Completed!' : 'Finish Module'}
           </button>
         ) : (

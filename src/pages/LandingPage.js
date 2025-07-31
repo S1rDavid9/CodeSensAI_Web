@@ -1,6 +1,6 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const fadeInUp = keyframes`
   from {
@@ -207,7 +207,49 @@ const FloatingElement = styled.div`
   &:nth-child(6) { bottom: 30%; right: 5%; }
 `;
 
-const LandingPage = () => (
+const RoleChoiceSection = styled.div`
+  margin: 3rem 0 2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+const RoleChoiceTitle = styled.h2`
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 1.2rem;
+  font-family: 'Poppins', Arial, sans-serif;
+`;
+const RoleButtonRow = styled.div`
+  display: flex;
+  gap: 2.5rem;
+`;
+const RoleButton = styled.button`
+  background: ${props => props.variant === 'student' ? '#f59e42' : '#8B5CF6'};
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 1.2rem 2.5rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  transition: background 0.2s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  &:hover {
+    background: ${props => props.variant === 'student' ? '#f7b733' : '#6d28d9'};
+    transform: translateY(-4px) scale(1.04);
+  }
+`;
+const Emoji = styled.span`
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+`;
+
+const LandingPage = () => {
+  const navigate = useNavigate();
+  return (
   <Wrapper>
     <FloatingElements>
       <FloatingElement duration={6} delay={0}>🌟</FloatingElement>
@@ -217,7 +259,6 @@ const LandingPage = () => (
       <FloatingElement duration={6} delay={1.5}>🚀</FloatingElement>
       <FloatingElement duration={5} delay={2.5}>✨</FloatingElement>
     </FloatingElements>
-    
     <Container>
       <Hero>
         <HeroContent>
@@ -227,14 +268,26 @@ const LandingPage = () => (
           </Subtitle>
           <CTAButton to="/register">🚀 Start Your Journey!</CTAButton>
         </HeroContent>
-        
         <HeroVisual>
           <MascotContainer>
             🥋
           </MascotContainer>
         </HeroVisual>
       </Hero>
-      
+        {/* Role Choice Section */}
+        <RoleChoiceSection>
+          <RoleChoiceTitle>Who are you?</RoleChoiceTitle>
+          <RoleButtonRow>
+            <RoleButton variant="student" onClick={() => navigate('/login')}>
+              <Emoji>👧👦</Emoji>
+              I’m a Student
+            </RoleButton>
+            <RoleButton variant="parent" onClick={() => navigate('/parent-login')}>
+              <Emoji>👩‍👧‍👦</Emoji>
+              I’m a Parent
+            </RoleButton>
+          </RoleButtonRow>
+        </RoleChoiceSection>
       <Features>
         <FeatureCard>
           <FeatureIcon>🤖</FeatureIcon>
@@ -263,5 +316,6 @@ const LandingPage = () => (
     </Container>
   </Wrapper>
 );
+};
 
 export default LandingPage; 

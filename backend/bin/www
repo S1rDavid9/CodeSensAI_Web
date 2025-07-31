@@ -1,9 +1,18 @@
 #!/usr/bin/env node
 
 /**
+ * Load environment variables first
+ */
+require('dotenv').config();
+
+/**
  * Module dependencies.
  */
 
+const connectDB = require('../db');
+
+// Connect to MongoDB before starting the server
+connectDB().then(() => {
 var app = require('../app');
 var debug = require('debug')('backend:server');
 var http = require('http');
@@ -89,3 +98,7 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+}).catch((err) => {
+  console.error('Failed to connect to MongoDB:', err);
+  process.exit(1);
+});
