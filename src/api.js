@@ -128,6 +128,24 @@ export async function resendVerificationEmail(email) {
   }
 }
 
+export async function generateInviteCode() {
+  try {
+    const res = await authenticatedFetch('/users/invite-code', {
+      method: 'POST',
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      return { success: true, code: data.code };
+    } else {
+      return { success: false, error: data.message || 'Failed to generate invite code' };
+    }
+  } catch (error) {
+    console.error('Generate invite code error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 export async function logoutUser() {
   removeToken();
   return { message: 'Logged out successfully' };

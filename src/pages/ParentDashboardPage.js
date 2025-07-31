@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FaSmile, FaMedal, FaStar, FaCheckCircle, FaPaperPlane, FaChartBar, FaTrophy } from 'react-icons/fa';
-import axios from 'axios';
+import { generateInviteCode } from '../api';
 import { useUser } from '../UserContext';
 import { useEffect } from 'react';
 import { useRef } from 'react';
@@ -219,11 +219,12 @@ export default function ParentDashboardPage() {
     setInviteLoading(true);
     setInviteError('');
     try {
-      const token = localStorage.getItem('codesensai_token');
-      const res = await axios.post('/users/invite-code', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setInviteCode(res.data.code);
+      const result = await generateInviteCode();
+      if (result.success) {
+        setInviteCode(result.code);
+      } else {
+        setInviteError(result.error || 'Could not generate invite code.');
+      }
     } catch (err) {
       console.error('Invite code generation error:', err);
       setInviteError('Could not generate invite code.');
