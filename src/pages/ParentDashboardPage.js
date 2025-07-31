@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { FaSmile, FaMedal, FaStar, FaCheckCircle, FaPaperPlane, FaChartBar, FaTrophy } from 'react-icons/fa';
-import { generateInviteCode, getStudents } from '../api';
+import { generateInviteCode, getStudents, sendEncouragement } from '../api';
 import { useUser } from '../UserContext';
 
 const PageBackground = styled.div`
@@ -184,25 +184,15 @@ export default function ParentDashboardPage() {
     if (!selectedStudent || !encouragement.trim()) return;
     
     try {
-      const token = localStorage.getItem('codesensai_token');
-      const res = await fetch(`/users/students/${selectedStudent._id}/encouragement`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ message: encouragement })
-      });
-      
-      const data = await res.json();
-      if (res.ok) {
+      const result = await sendEncouragement(selectedStudent._id, encouragement);
+      if (result.success) {
         setSent(true);
         setTimeout(() => setSent(false), 3000);
         setEncouragement('');
         // Refresh students to get updated data
         fetchStudents();
       } else {
-        console.error('Failed to send encouragement:', data.message);
+        console.error('Failed to send encouragement:', result.error);
       }
     } catch (err) {
       console.error('Error sending encouragement:', err);

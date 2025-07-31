@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { FaUser, FaEdit, FaSave, FaTimes, FaTrophy, FaStar, FaMedal, FaSmile, FaChartBar, FaCalendarAlt, FaBookOpen, FaGraduationCap, FaUsers, FaHeart, FaLightbulb, FaRocket, FaCheckCircle } from 'react-icons/fa';
 import { useUser } from '../UserContext';
-import { updateUserProfile } from '../api';
-import { FaMedal, FaCheckCircle, FaStar, FaEdit, FaUser } from 'react-icons/fa';
+import { updateUserProfile, getStudents } from '../api';
 import Spinner from '../components/Spinner';
 
 const Wrapper = styled.section`
@@ -308,13 +308,9 @@ const ProfilePage = () => {
       const fetchStudents = async () => {
         setStudentsLoading(true);
         try {
-          const token = localStorage.getItem('codesensai_token');
-          const res = await fetch('/users/students', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const data = await res.json();
-          if (res.ok && data.students) {
-            setStudents(data.students);
+          const result = await getStudents();
+          if (result.success && result.students) {
+            setStudents(result.students);
           } else {
             setStudents([]);
           }

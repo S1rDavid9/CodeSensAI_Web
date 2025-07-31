@@ -162,6 +162,25 @@ export async function getStudents() {
   }
 }
 
+export async function sendEncouragement(studentId, message) {
+  try {
+    const res = await authenticatedFetch(`/users/students/${studentId}/encouragement`, {
+      method: 'POST',
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      return { success: true, message: data.message };
+    } else {
+      return { success: false, error: data.message || 'Failed to send encouragement' };
+    }
+  } catch (error) {
+    console.error('Send encouragement error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 export async function logoutUser() {
   removeToken();
   return { message: 'Logged out successfully' };
