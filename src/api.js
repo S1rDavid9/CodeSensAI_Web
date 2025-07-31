@@ -146,6 +146,22 @@ export async function generateInviteCode() {
   }
 }
 
+export async function getStudents() {
+  try {
+    const res = await authenticatedFetch('/users/students');
+    const data = await res.json();
+    
+    if (res.ok) {
+      return { success: true, students: data.students };
+    } else {
+      return { success: false, error: data.message || 'Failed to fetch students' };
+    }
+  } catch (error) {
+    console.error('Get students error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 export async function logoutUser() {
   removeToken();
   return { message: 'Logged out successfully' };

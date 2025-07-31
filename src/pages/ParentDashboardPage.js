@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { FaSmile, FaMedal, FaStar, FaCheckCircle, FaPaperPlane, FaChartBar, FaTrophy } from 'react-icons/fa';
-import { generateInviteCode } from '../api';
+import { generateInviteCode, getStudents } from '../api';
 import { useUser } from '../UserContext';
 
 const PageBackground = styled.div`
@@ -155,22 +155,18 @@ export default function ParentDashboardPage() {
     setStudentsLoading(true);
     setStudentsError('');
     try {
-      const token = localStorage.getItem('codesensai_token');
-      const res = await fetch('/users/students', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok && data.students) {
+      const result = await getStudents();
+      if (result.success) {
         // Notification logic
-        if (prevStudentCount.current !== undefined && data.students.length > prevStudentCount.current) {
+        if (prevStudentCount.current !== undefined && result.students.length > prevStudentCount.current) {
           setNewStudentLinked(true);
           setTimeout(() => setNewStudentLinked(false), 4000);
         }
-        prevStudentCount.current = data.students.length;
-        setStudents(data.students);
-        setSelectedStudent(data.students[0] || null);
+        prevStudentCount.current = result.students.length;
+        setStudents(result.students);
+        setSelectedStudent(result.students[0] || null);
       } else {
-        setStudentsError(data.message || 'Could not fetch students.');
+        setStudentsError(result.error || 'Could not fetch students.');
       }
     } catch (err) {
       setStudentsError('Could not fetch students.');
