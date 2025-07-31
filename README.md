@@ -277,6 +277,20 @@ npm start
 
 ## 🧪 Testing
 
+### 🎓 **Teacher Demo Credentials**
+
+For quick testing and demonstration purposes, you can use these pre-configured accounts:
+
+#### 👨‍👩‍👧‍👦 **Parent Account**
+```
+Username: Schneider
+Password: arnold59
+```
+*This account has access to the parent dashboard with full monitoring capabilities.*
+
+#### 👨‍🎓 **Student Account**
+*Create a new student account using the parent's invite code system.*
+
 ### Frontend Tests
 
 ```bash
