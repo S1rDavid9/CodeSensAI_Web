@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { FaSmile, FaMedal, FaStar, FaCheckCircle, FaPaperPlane, FaChartBar, FaTrophy } from 'react-icons/fa';
 import { generateInviteCode } from '../api';
 import { useUser } from '../UserContext';
-import { useEffect } from 'react';
-import { useRef } from 'react';
 
 const PageBackground = styled.div`
   min-height: 100vh;
