@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaEnvelope, FaCheckCircle, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import { FaEnvelope, FaCheckCircle, FaExclamationTriangle, FaRedo } from 'react-icons/fa';
+
+// Import API functions instead of making direct fetch calls
+import { verifyEmail, resendVerificationEmail } from '../api';
+
+// API base URL - same as in api.js
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -91,7 +97,7 @@ const ResendButton = styled.button`
   }
 `;
 
-const Spinner = styled(FaSpinner)`
+const Spinner = styled(FaRedo)`
   animation: spin 1s linear infinite;
   
   @keyframes spin {
@@ -121,7 +127,7 @@ const EmailVerificationPage = () => {
     if (token && !verificationCompletedRef.current) {
       console.log('Starting verification process...');
       verificationCompletedRef.current = true; // Mark as completed immediately
-      verifyEmail(token);
+      verifyEmailToken(token);
     } else if (!token) {
       console.log('No token found in URL');
       setStatus('error');
@@ -136,37 +142,26 @@ const EmailVerificationPage = () => {
     };
   }, [searchParams]); // Remove dependencies that cause re-runs
 
-  const verifyEmail = async (token) => {
-    console.log('verifyEmail function called with token:', token.substring(0, 10) + '...');
-    console.log('Current status:', status);
-    console.log('verificationCompletedRef.current:', verificationCompletedRef.current);
-    
+  const verifyEmailToken = async (token) => {
+    console.log('Starting email verification for token:', token.substring(0, 10) + '...');
+    setStatus('loading');
+    setMessage('Verifying your email...');
+
     try {
-      console.log('Making verification request...');
-      const response = await fetch('/users/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
+      console.log('Calling verifyEmail API function...');
+      const result = await verifyEmail(token);
+      console.log('API result:', result);
 
-      console.log('Response received:', response.status, response.ok);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      const data = await response.json();
-      console.log('Verification response data:', data);
-
-      if (response.ok) {
+      if (result.success) {
         console.log('Verification successful - updating UI');
         setStatus('success');
-        setMessage(data.message);
-        setEmail(data.user.email);
+        setMessage(result.message);
+        setEmail(result.user?.email);
         
         // Automatically log in the user
-        if (data.token) {
+        if (result.token) {
           console.log('Setting JWT token');
-          localStorage.setItem('codesensai_token', data.token);
+          localStorage.setItem('codesensai_token', result.token);
           console.log('User token saved successfully');
         }
         
@@ -177,9 +172,9 @@ const EmailVerificationPage = () => {
           navigate('/onboarding');
         }, 2000);
       } else {
-        console.log('Verification failed with status:', response.status);
+        console.log('Verification failed:', result.error);
         setStatus('error');
-        setMessage(data.message || 'Verification failed. Please try again.');
+        setMessage(result.error || 'Verification failed. Please try again.');
       }
     } catch (error) {
       console.error('Verification error details:', error);
@@ -199,20 +194,14 @@ const EmailVerificationPage = () => {
 
     setResendLoading(true);
     try {
-      const response = await fetch('/users/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      console.log('Calling resendVerificationEmail API function...');
+      const result = await resendVerificationEmail(email);
+      console.log('Resend API result:', result);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (result.success) {
         setMessage('Verification email sent successfully! Please check your inbox.');
       } else {
-        setMessage(data.message || 'Failed to resend verification email.');
+        setMessage(result.error || 'Failed to resend verification email.');
       }
     } catch (error) {
       console.error('Resend error:', error);
